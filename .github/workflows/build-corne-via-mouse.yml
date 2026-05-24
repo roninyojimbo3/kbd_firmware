@@ -29,9 +29,9 @@ jobs:
             git
           python3 -m pip install --user qmk
 
-      - name: Fetch QMK submodule only
+      - name: Fetch QMK and required nested submodules
         run: |
-          git submodule update --init --depth 1 src/qmk/qmk_firmware
+          git submodule update --init --recursive --depth 1 src/qmk/qmk_firmware
 
       - name: Prepare Foostan crkbd source in QMK
         run: |
