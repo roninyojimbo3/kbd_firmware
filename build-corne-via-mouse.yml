@@ -1,0 +1,55 @@
+name: Build Corne VIA Mouse Firmware
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "keyboards/crkbd/qmk/qmk_firmware/**"
+      - ".github/workflows/build-corne-via-mouse.yml"
+
+jobs:
+  build-crkbd-rev1-via:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out firmware repository
+        uses: actions/checkout@v4
+
+      - name: Install QMK build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            gcc-avr \
+            avr-libc \
+            binutils-avr \
+            dfu-programmer \
+            dfu-util \
+            python3-pip \
+            git
+          python3 -m pip install --user qmk
+
+      - name: Fetch QMK submodule only
+        run: |
+          git submodule update --init --depth 1 src/qmk/qmk_firmware
+
+      - name: Prepare Foostan crkbd source in QMK
+        run: |
+          make qmk-clean
+          kb=crkbd make qmk-init
+
+      - name: Compile crkbd rev1 VIA firmware with mouse support
+        run: |
+          kb=crkbd kr=rev1 km=via make qmk-compile
+
+      - name: Verify firmware exists
+        run: |
+          ls -lh keyboards/crkbd/qmk/qmk_firmware/.build/
+          test -f keyboards/crkbd/qmk/qmk_firmware/.build/crkbd_rev1_via.hex
+
+      - name: Upload flashable HEX
+        uses: actions/upload-artifact@v4
+        with:
+          name: crkbd_rev1_via_mouse_enabled
+          path: keyboards/crkbd/qmk/qmk_firmware/.build/crkbd_rev1_via.hex
+          if-no-files-found: error
